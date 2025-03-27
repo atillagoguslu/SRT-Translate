@@ -10,7 +10,7 @@ export function SubtitleProvider({ children }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [batchSettings, setBatchSettings] = useState({
-    minLines: 5,
+    minLines: 1,
     maxLines: 10,
   });
 

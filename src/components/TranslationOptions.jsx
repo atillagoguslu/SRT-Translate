@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useSubtitle } from "../context/SubtitleContext";
+import { useLmStudio } from "../context/LmStudioContext";
+import lmStudioService from "../services/lmStudioService";
 
 function TranslationOptions() {
   const {
@@ -13,23 +15,20 @@ function TranslationOptions() {
     updateSubtitle,
   } = useSubtitle();
 
+  const {
+    lmStudioStatus,
+    checkLmStudioConnection,
+    selectedModel,
+    selectModel,
+  } = useLmStudio();
+
   const [translationInProgress, setTranslationInProgress] = useState(false);
   const [progress, setProgress] = useState(0);
 
   const languages = [
-    { code: "en", name: "English" },
-    { code: "es", name: "Spanish" },
-    { code: "fr", name: "French" },
-    { code: "de", name: "German" },
-    { code: "it", name: "Italian" },
-    { code: "pt", name: "Portuguese" },
-    { code: "ru", name: "Russian" },
-    { code: "zh", name: "Chinese" },
-    { code: "ja", name: "Japanese" },
-    { code: "ko", name: "Korean" },
-    { code: "ar", name: "Arabic" },
-    { code: "hi", name: "Hindi" },
     { code: "tr", name: "Turkish" },
+    { code: "de", name: "German" },
+    { code: "en", name: "English" },
   ];
 
   const handleLanguageChange = (e) => {
@@ -42,6 +41,10 @@ function TranslationOptions() {
       ...prev,
       [name]: parseInt(value, 10),
     }));
+  };
+
+  const handleModelChange = (e) => {
+    selectModel(e.target.value);
   };
 
   const createBatches = () => {
@@ -73,16 +76,25 @@ function TranslationOptions() {
 
   const translateBatch = async (batch) => {
     try {
-      // In a real implementation, this would call an API
-      // For this demo, we'll simulate translation
-      return batch.map((subtitle) => {
-        // Simulate translation by reversing the text (just for demo)
+      // Get all text from the batch for translation
+      const batchText = batch.map((subtitle) => subtitle.text).join("\n");
+
+      // Use LM Studio to translate the batch text
+      const translatedText = await lmStudioService.translateText(
+        batchText,
+        getLanguageName(targetLanguage),
+        selectedModel
+      );
+
+      // Split the translated text back into individual subtitle translations
+      const translatedLines = translatedText.split("\n");
+
+      return batch.map((subtitle, index) => {
         return {
           ...subtitle,
-          translated: `[${targetLanguage}] ${subtitle.text
-            .split("")
-            .reverse()
-            .join("")}`,
+          translated:
+            translatedLines[index] ||
+            `[Error: Missing translation for line ${index + 1}]`,
         };
       });
     } catch (error) {
@@ -90,9 +102,21 @@ function TranslationOptions() {
     }
   };
 
+  const getLanguageName = (code) => {
+    const language = languages.find((lang) => lang.code === code);
+    return language ? language.name : code;
+  };
+
   const startTranslation = async () => {
     if (!targetLanguage || !subtitles.length) {
       setError("Please select a language and make sure subtitles are loaded");
+      return;
+    }
+
+    if (!lmStudioStatus.connected) {
+      setError(
+        "LM Studio is not connected. Please start LM Studio and load a model."
+      );
       return;
     }
 
@@ -127,6 +151,63 @@ function TranslationOptions() {
 
   return (
     <div className="translation-options">
+      <div className="lm-studio-status">
+        <div className="status-indicator">
+          <span>LM Studio Status: </span>
+          <span
+            className={`status-badge ${
+              lmStudioStatus.checking
+                ? "checking"
+                : lmStudioStatus.connected
+                ? "connected"
+                : "disconnected"
+            }`}
+          >
+            {lmStudioStatus.checking
+              ? "Checking..."
+              : lmStudioStatus.connected
+              ? "Connected"
+              : "Disconnected"}
+          </span>
+          <button
+            className="refresh-button"
+            onClick={checkLmStudioConnection}
+            disabled={lmStudioStatus.checking}
+          >
+            ↻
+          </button>
+        </div>
+        {lmStudioStatus.error && (
+          <div className="status-error">Error: {lmStudioStatus.error}</div>
+        )}
+        {lmStudioStatus.connected && lmStudioStatus.models && (
+          <div className="status-models">
+            Models: {lmStudioStatus.models.length} available
+          </div>
+        )}
+      </div>
+
+      {lmStudioStatus.connected &&
+        lmStudioStatus.models &&
+        lmStudioStatus.models.length > 0 && (
+          <div className="model-selector-container">
+            <label htmlFor="model-selector">Select Model:</label>
+            <select
+              id="model-selector"
+              value={selectedModel || ""}
+              onChange={handleModelChange}
+              disabled={translationInProgress}
+            >
+              <option value="">Default Model</option>
+              {lmStudioStatus.models.map((model) => (
+                <option key={model.id} value={model.id}>
+                  {model.id}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
       <div className="options-row">
         <div className="language-selector">
           <label htmlFor="target-language">Target Language:</label>
@@ -179,7 +260,12 @@ function TranslationOptions() {
       <button
         className="translate-button"
         onClick={startTranslation}
-        disabled={translationInProgress || !targetLanguage || !subtitles.length}
+        disabled={
+          translationInProgress ||
+          !targetLanguage ||
+          !subtitles.length ||
+          !lmStudioStatus.connected
+        }
       >
         {translationInProgress ? "Translating..." : "Translate Subtitles"}
       </button>
