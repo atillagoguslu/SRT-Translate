@@ -1,35 +1,44 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import "./App.css";
+import { SubtitleProvider } from "./context/SubtitleContext";
+import FileUploader from "./components/FileUploader";
+import SubtitleDisplay from "./components/SubtitleDisplay";
+import TranslationOptions from "./components/TranslationOptions";
+import ExportOptions from "./components/ExportOptions";
+import Footer from "./components/Footer";
+import ErrorDisplay from "./components/ErrorDisplay";
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <SubtitleProvider>
+      <div className="app-container">
+        <header className="app-header">
+          <h1>SRTTranslate</h1>
+          <p>Easily translate your SRT subtitle files</p>
+        </header>
+
+        <main className="app-main">
+          <ErrorDisplay />
+
+          <section className="file-upload-section">
+            <FileUploader />
+          </section>
+
+          <section className="translator-section">
+            <div className="options-panel">
+              <TranslationOptions />
+              <ExportOptions />
+            </div>
+
+            <div className="subtitles-panel">
+              <SubtitleDisplay />
+            </div>
+          </section>
+        </main>
+
+        <Footer />
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    </SubtitleProvider>
+  );
 }
 
-export default App
+export default App;
