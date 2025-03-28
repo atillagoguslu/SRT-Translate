@@ -10,8 +10,6 @@ function TranslationOptions() {
     setTargetLanguage,
     setIsLoading,
     setError,
-    batchSettings,
-    setBatchSettings,
     updateSubtitle,
   } = useSubtitle();
 
@@ -35,68 +33,94 @@ function TranslationOptions() {
     setTargetLanguage(e.target.value);
   };
 
-  const handleBatchSizeChange = (e) => {
-    const { name, value } = e.target;
-    setBatchSettings((prev) => ({
-      ...prev,
-      [name]: parseInt(value, 10),
-    }));
-  };
-
   const handleModelChange = (e) => {
     selectModel(e.target.value);
   };
 
-  const createBatches = () => {
-    const { minLines, maxLines } = batchSettings;
-    const batches = [];
-    let currentBatch = [];
-    let currentLength = 0;
-
-    subtitles.forEach((subtitle) => {
-      currentBatch.push(subtitle);
-      currentLength++;
-
-      if (
-        currentLength >= maxLines ||
-        (currentLength >= minLines && subtitle.text.endsWith("."))
-      ) {
-        batches.push(currentBatch);
-        currentBatch = [];
-        currentLength = 0;
-      }
-    });
-
-    if (currentBatch.length > 0) {
-      batches.push(currentBatch);
-    }
-
-    return batches;
+  // Detects if a string ends with a sentence-ending character
+  const isSentenceEnd = (text) => {
+    return /[.!?♪](\s|$)/.test(text.trim());
   };
 
-  const translateBatch = async (batch) => {
-    try {
-      // Get all text from the batch for translation
-      const batchText = batch.map((subtitle) => subtitle.text).join("\n");
+  // Group subtitles into complete sentences
+  const groupSubtitlesIntoSentences = (subtitles) => {
+    const sentenceGroups = [];
+    let currentGroup = [];
 
-      // Use LM Studio to translate the batch text
-      const translatedText = await lmStudioService.translateText(
-        batchText,
+    for (let i = 0; i < subtitles.length; i++) {
+      const subtitle = subtitles[i];
+      currentGroup.push(subtitle);
+
+      // If this subtitle ends with a sentence-ending character or is the last subtitle,
+      // consider the current group as a complete sentence
+      if (isSentenceEnd(subtitle.text) || i === subtitles.length - 1) {
+        sentenceGroups.push({
+          subtitles: [...currentGroup],
+          fullText: currentGroup.map((sub) => sub.text).join(" • "),
+        });
+        currentGroup = [];
+      }
+    }
+
+    return sentenceGroups;
+  };
+
+  // Translate a full sentence and split the result back into subtitle chunks
+  const translateSentence = async (sentenceGroup) => {
+    try {
+      // Translate the full sentence
+      const fullTranslatedText = await lmStudioService.translateText(
+        sentenceGroup.fullText,
         getLanguageName(targetLanguage),
         selectedModel
       );
 
-      // Split the translated text back into individual subtitle translations
-      const translatedLines = translatedText.split("\n");
+      // Remove any "•" characters that might have remained in the translation
+      const cleanTranslatedText = fullTranslatedText.replace(/•/g, "");
 
-      return batch.map((subtitle, index) => {
-        return {
+      // Handle single subtitle case directly
+      if (sentenceGroup.subtitles.length === 1) {
+        return [
+          {
+            ...sentenceGroup.subtitles[0],
+            translated:
+              cleanTranslatedText.trim() || "[Error: Missing translation]",
+          },
+        ];
+      }
+
+      // Better approach for multiple subtitles
+      const parts = cleanTranslatedText.split(/\s+/); // Split by spaces
+
+      // Calculate the number of words per subtitle
+      const wordsPerSubtitle = Math.floor(
+        parts.length / sentenceGroup.subtitles.length
+      );
+
+      let translatedSubtitles = [];
+      let currentIndex = 0;
+
+      for (let i = 0; i < sentenceGroup.subtitles.length; i++) {
+        const subtitle = sentenceGroup.subtitles[i];
+        const isLastSubtitle = i === sentenceGroup.subtitles.length - 1;
+
+        // For last subtitle, take all remaining words
+        const endIndex = isLastSubtitle
+          ? parts.length
+          : currentIndex + wordsPerSubtitle;
+
+        // Get words for this subtitle
+        const translatedChunk = parts.slice(currentIndex, endIndex).join(" ");
+
+        translatedSubtitles.push({
           ...subtitle,
-          translated:
-            translatedLines[index] ||
-            `[Error: Missing translation for line ${index + 1}]`,
-        };
-      });
+          translated: translatedChunk.trim() || "[Error: Missing translation]",
+        });
+
+        currentIndex = endIndex;
+      }
+
+      return translatedSubtitles;
     } catch (error) {
       throw new Error(`Translation failed: ${error.message}`);
     }
@@ -126,19 +150,23 @@ function TranslationOptions() {
     setProgress(0);
 
     try {
-      const batches = createBatches();
-      const totalBatches = batches.length;
+      // Group subtitles into sentences
+      const sentenceGroups = groupSubtitlesIntoSentences(subtitles);
+      const totalGroups = sentenceGroups.length;
+      let processedSubtitles = 0;
 
-      for (let i = 0; i < totalBatches; i++) {
-        const batch = batches[i];
-        const translatedBatch = await translateBatch(batch);
+      for (let i = 0; i < totalGroups; i++) {
+        const sentenceGroup = sentenceGroups[i];
+        const translatedSubtitles = await translateSentence(sentenceGroup);
 
-        // Update each subtitle with its translation
-        translatedBatch.forEach((translatedSub) => {
+        // Update each subtitle in the group with its translation
+        for (const translatedSub of translatedSubtitles) {
           updateSubtitle(translatedSub.id, translatedSub.translated, true);
-        });
-
-        setProgress(Math.round(((i + 1) / totalBatches) * 100));
+          processedSubtitles++;
+          setProgress(
+            Math.round((processedSubtitles / subtitles.length) * 100)
+          );
+        }
       }
     } catch (error) {
       setError(error.message);
@@ -224,36 +252,6 @@ function TranslationOptions() {
               </option>
             ))}
           </select>
-        </div>
-
-        <div className="batch-settings">
-          <div className="batch-setting">
-            <label htmlFor="minLines">Min Lines:</label>
-            <input
-              type="number"
-              id="minLines"
-              name="minLines"
-              min="1"
-              max="10"
-              value={batchSettings.minLines}
-              onChange={handleBatchSizeChange}
-              disabled={translationInProgress}
-            />
-          </div>
-
-          <div className="batch-setting">
-            <label htmlFor="maxLines">Max Lines:</label>
-            <input
-              type="number"
-              id="maxLines"
-              name="maxLines"
-              min={batchSettings.minLines}
-              max="15"
-              value={batchSettings.maxLines}
-              onChange={handleBatchSizeChange}
-              disabled={translationInProgress}
-            />
-          </div>
         </div>
       </div>
 

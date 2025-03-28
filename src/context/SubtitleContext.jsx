@@ -9,10 +9,6 @@ export function SubtitleProvider({ children }) {
   const [targetLanguage, setTargetLanguage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [batchSettings, setBatchSettings] = useState({
-    minLines: 1,
-    maxLines: 10,
-  });
 
   const parseSRT = (content) => {
     setOriginalContent(content);
@@ -63,13 +59,11 @@ export function SubtitleProvider({ children }) {
     targetLanguage,
     isLoading,
     error,
-    batchSettings,
     setOriginalContent,
     setSubtitles,
     setTargetLanguage,
     setIsLoading,
     setError,
-    setBatchSettings,
     parseSRT,
     updateSubtitle,
     generateSRT,
