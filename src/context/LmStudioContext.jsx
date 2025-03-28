@@ -66,6 +66,7 @@ export function LmStudioProvider({ children }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useLmStudio() {
   const context = useContext(LmStudioContext);
   if (context === undefined) {
