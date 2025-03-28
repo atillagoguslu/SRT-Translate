@@ -120,7 +120,7 @@ function TranslationOptions() {
   // Translate a full sentence and split the result back into subtitle chunks
   const translateSentence = async (sentenceGroup) => {
     try {
-      // Translate the full sentence
+      // Just translate the full sentence without line break instructions
       const fullTranslatedText = await lmStudioService.translateText(
         sentenceGroup.fullText,
         getLanguageName(targetLanguage),
@@ -129,55 +129,192 @@ function TranslationOptions() {
         maxTokens
       );
 
-      // Remove any "•" characters that might have remained in the translation
-      const cleanTranslatedText = fullTranslatedText.replace(/•/g, "");
+      // Clean the translated text
+      const cleanTranslatedText = fullTranslatedText.replace(/•/g, "").trim();
 
       // Handle single subtitle case directly
       if (sentenceGroup.subtitles.length === 1) {
         return [
           {
             ...sentenceGroup.subtitles[0],
-            translated:
-              cleanTranslatedText.trim() || "[Error: Missing translation]",
+            translated: cleanTranslatedText || "[Error: Missing translation]",
           },
         ];
       }
 
-      // Better approach for multiple subtitles
-      const parts = cleanTranslatedText.split(/\s+/); // Split by spaces
-
-      // Calculate the number of words per subtitle
-      const wordsPerSubtitle = Math.floor(
-        parts.length / sentenceGroup.subtitles.length
+      // Use intelligent splitting based on original line structure and content
+      const translatedLines = intelligentlySplitText(
+        cleanTranslatedText,
+        sentenceGroup.subtitles
       );
 
-      let translatedSubtitles = [];
-      let currentIndex = 0;
-
-      for (let i = 0; i < sentenceGroup.subtitles.length; i++) {
-        const subtitle = sentenceGroup.subtitles[i];
-        const isLastSubtitle = i === sentenceGroup.subtitles.length - 1;
-
-        // For last subtitle, take all remaining words
-        const endIndex = isLastSubtitle
-          ? parts.length
-          : currentIndex + wordsPerSubtitle;
-
-        // Get words for this subtitle
-        const translatedChunk = parts.slice(currentIndex, endIndex).join(" ");
-
-        translatedSubtitles.push({
-          ...subtitle,
-          translated: translatedChunk.trim() || "[Error: Missing translation]",
-        });
-
-        currentIndex = endIndex;
-      }
-
-      return translatedSubtitles;
+      // Map translated lines to subtitle objects
+      return sentenceGroup.subtitles.map((subtitle, index) => ({
+        ...subtitle,
+        translated: translatedLines[index] || "[Error: Missing translation]",
+      }));
     } catch (error) {
       throw new Error(`Translation failed: ${error.message}`);
     }
+  };
+
+  // Intelligently split text based on original subtitle structure
+  const intelligentlySplitText = (translatedText, originalSubtitles) => {
+    const lineCount = originalSubtitles.length;
+    if (lineCount === 1) return [translatedText];
+
+    // Analyze original subtitle characteristics
+    const originalLengthRatios = [];
+    const totalOriginalLength = originalSubtitles.reduce(
+      (sum, sub) => sum + sub.text.length,
+      0
+    );
+
+    // Calculate what percentage of the total text each subtitle represents
+    for (const sub of originalSubtitles) {
+      originalLengthRatios.push(sub.text.length / totalOriginalLength);
+    }
+
+    // Get punctuation break points
+    const breakPoints = [];
+    const punctuationPattern = /[,.!?:;]\s+/g;
+    let match;
+
+    while ((match = punctuationPattern.exec(translatedText)) !== null) {
+      breakPoints.push({
+        index: match.index + 1, // +1 to include the punctuation
+        char: translatedText[match.index],
+      });
+    }
+
+    // First try to split at sentence endings for clean breaks
+    if (
+      breakPoints.filter((bp) => ".!?".includes(bp.char)).length >=
+      lineCount - 1
+    ) {
+      // We have enough sentence-ending punctuation
+      return splitAtPunctuation(
+        translatedText,
+        lineCount,
+        breakPoints,
+        originalLengthRatios,
+        true
+      );
+    }
+    // Then try with all punctuation marks
+    else if (breakPoints.length >= lineCount - 1) {
+      return splitAtPunctuation(
+        translatedText,
+        lineCount,
+        breakPoints,
+        originalLengthRatios,
+        false
+      );
+    }
+    // Finally fall back to proportional splitting
+    else {
+      return splitByProportion(translatedText, originalLengthRatios);
+    }
+  };
+
+  // Split text at punctuation marks, trying to maintain original proportions
+  const splitAtPunctuation = (
+    text,
+    lineCount,
+    breakPoints,
+    originalRatios,
+    sentenceEndOnly
+  ) => {
+    // Filter break points if we only want sentence endings
+    if (sentenceEndOnly) {
+      breakPoints = breakPoints.filter((bp) => ".!?".includes(bp.char));
+    }
+
+    breakPoints.sort((a, b) => a.index - b.index);
+
+    // Calculate ideal break positions based on original ratios
+    const idealPositions = [];
+    let cumulativeRatio = 0;
+
+    for (let i = 0; i < originalRatios.length - 1; i++) {
+      cumulativeRatio += originalRatios[i];
+      idealPositions.push(Math.round(text.length * cumulativeRatio));
+    }
+
+    // Find closest break points to ideal positions
+    const selectedBreakPoints = [];
+    for (const idealPos of idealPositions) {
+      if (breakPoints.length === 0) break;
+
+      // Find closest break point
+      let closestPoint = breakPoints.reduce((prev, curr) =>
+        Math.abs(curr.index - idealPos) < Math.abs(prev.index - idealPos)
+          ? curr
+          : prev
+      );
+
+      selectedBreakPoints.push(closestPoint.index);
+
+      // Remove used break point and nearby points to avoid clustering
+      breakPoints = breakPoints.filter(
+        (bp) => Math.abs(bp.index - closestPoint.index) > 10
+      );
+    }
+
+    // Sort break points
+    selectedBreakPoints.sort((a, b) => a - b);
+
+    // Split text at the selected points
+    return splitAtIndices(text, selectedBreakPoints);
+  };
+
+  // Split text proportionally according to original subtitle length ratios
+  const splitByProportion = (text, ratios) => {
+    const breakPoints = [];
+    let cumulativeRatio = 0;
+
+    // Calculate break points based on original proportions
+    for (let i = 0; i < ratios.length - 1; i++) {
+      cumulativeRatio += ratios[i];
+
+      // Find a good break point near the proportional position
+      const idealPos = Math.round(text.length * cumulativeRatio);
+      let actualPos = idealPos;
+
+      // Look for a space within 10 characters
+      const searchRadius = 15;
+      for (let j = 0; j < searchRadius; j++) {
+        // Check forward
+        if (idealPos + j < text.length && text[idealPos + j] === " ") {
+          actualPos = idealPos + j;
+          break;
+        }
+        // Check backward
+        if (idealPos - j > 0 && text[idealPos - j] === " ") {
+          actualPos = idealPos - j;
+          break;
+        }
+      }
+
+      breakPoints.push(actualPos);
+    }
+
+    // Split text at the selected points
+    return splitAtIndices(text, breakPoints);
+  };
+
+  // Helper to split text at specified indices
+  const splitAtIndices = (text, indices) => {
+    const lines = [];
+    let startIndex = 0;
+
+    for (const index of indices) {
+      lines.push(text.substring(startIndex, index).trim());
+      startIndex = index;
+    }
+
+    lines.push(text.substring(startIndex).trim());
+    return lines;
   };
 
   const getLanguageName = (code) => {
