@@ -5,7 +5,6 @@ import FileUploader from "./components/FileUploader";
 import SubtitleDisplay from "./components/SubtitleDisplay";
 import TranslationOptions from "./components/TranslationOptions";
 import ExportOptions from "./components/ExportOptions";
-import ErrorDisplay from "./components/ErrorDisplay";
 
 function App() {
   return (
@@ -18,7 +17,6 @@ function App() {
           </header>
 
           <main className="app-main">
-            <ErrorDisplay />
 
             <section className="file-upload-section">
               <FileUploader />

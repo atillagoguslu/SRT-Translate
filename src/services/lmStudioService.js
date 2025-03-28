@@ -49,27 +49,14 @@ const lmStudioService = {
       // Check if text starts and ends with music symbols (♪ or ♫) and they are not part of words
       const trimmedText = text.trim();
 
-      // This regex pattern ensures:
-      // 1. Text starts with a music symbol
-      // 2. Text ends with a music symbol
-      // 3. Works with multi-line lyrics between music symbols
-      if (
-        /^[♪♫][\s\S]*[♪♫]$/.test(trimmedText) &&
-        trimmedText.match(/[♪♫]/g).length === 2
-      ) {
-        // If it has music symbols correctly placed, return the text directly without translation
+      // Simple check for any music symbols
+      if (/[♪♫]/.test(trimmedText)) {
         return text;
       }
 
       // eslint-disable-next-line no-unused-vars
-      const prompt_backup = `You are a professional translator. Translate the following text into ${targetLanguage} directly. Only respond with the translated text, nothing else.`;
-      const prompt = `You are a professional subtitle translator. Translate the following text into ${targetLanguage}. 
-
-If the input contains specific line breaks (one text per line), preserve the same line structure in your translation. Each original line should correspond to one translated line.
-
-Be careful with the meaning of the text and translate it accurately. Pay attention to comma usage. 
-
-Only respond with the translated text, nothing else.`;
+      const prompt_backup = `You are a professional translator. Translate the following text into ${targetLanguage}. Only respond with the translated text, nothing else.`;
+      const prompt = `You are a professional translator. Translate the following text into ${targetLanguage}. Only respond with the translated text, nothing else.`;
 
       const response = await axios.post(
         `${LM_STUDIO_API_URL}/chat/completions`,

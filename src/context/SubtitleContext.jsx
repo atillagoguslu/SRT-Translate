@@ -18,13 +18,35 @@ export function SubtitleProvider({ children }) {
     const rawParsedSubtitles = parser.fromSrt(content);
 
     // Map the parsed data to our app's subtitle format
-    const parsedSubtitles = rawParsedSubtitles.map((sub) => ({
-      id: parseInt(sub.id),
-      startTime: sub.startTime,
-      endTime: sub.endTime,
-      text: sub.text,
-      translated: null,
-    }));
+    const parsedSubtitles = rawParsedSubtitles.map((sub) => {
+      // Check if sub.text ends with a music symbol
+      // or comma or period or question mark or exclamation mark
+      const lastChar = sub.text.slice(-1);
+      if (
+        lastChar === "♪" ||
+        lastChar === "♫" ||
+        lastChar === "," ||
+        lastChar === "." ||
+        lastChar === "?" ||
+        lastChar === "!"
+      ) {
+        return {
+          id: parseInt(sub.id),
+          startTime: sub.startTime,
+          endTime: sub.endTime,
+          text: sub.text,
+          translated: null,
+        };
+      }
+      const comma_added = sub.text + ",";
+      return {
+        id: parseInt(sub.id),
+        startTime: sub.startTime,
+        endTime: sub.endTime,
+        text: comma_added,
+        translated: null,
+      };
+    });
 
     setSubtitles(parsedSubtitles);
     return parsedSubtitles;
@@ -76,6 +98,7 @@ export function SubtitleProvider({ children }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useSubtitle() {
   const context = useContext(SubtitleContext);
   if (context === undefined) {
