@@ -1,4 +1,3 @@
-import { useSubtitle } from "../context/SubtitleContext";
 
 function TranslationSettings({
   targetLanguage,

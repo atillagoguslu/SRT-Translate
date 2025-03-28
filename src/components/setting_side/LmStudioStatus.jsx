@@ -1,4 +1,4 @@
-import { useLmStudio } from "../context/LmStudioContext";
+import { useLmStudio } from "../../context/LmStudioContext";
 
 function LmStudioStatus() {
   const {

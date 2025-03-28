@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { useSubtitle } from "../context/SubtitleContext";
-import { useLmStudio } from "../context/LmStudioContext";
+import { useSubtitle } from "../../context/SubtitleContext";
+import { useLmStudio } from "../../context/LmStudioContext";
 import LmStudioStatus from "./LmStudioStatus";
 import TranslationSettings from "./TranslationSettings";
 import ProgressBar from "./ProgressBar";
@@ -26,6 +26,7 @@ function TranslationOptions() {
   const [maxTokens, setMaxTokens] = useState(100);
   const [startTime, setStartTime] = useState(null);
   const [timeRemaining, setTimeRemaining] = useState(null);
+  const [currentLineIndex, setCurrentLineIndex] = useState(0);
 
   // Update endIndex when subtitles change
   useEffect(() => {
@@ -86,6 +87,7 @@ function TranslationOptions() {
     setProgress(0);
     setStartTime(Date.now());
     setTimeRemaining(null);
+    setCurrentLineIndex(validatedStart);
 
     try {
       // Get subtitles in the specified range
@@ -114,6 +116,7 @@ function TranslationOptions() {
         for (const translatedSub of translatedSubtitles) {
           updateSubtitle(translatedSub.id, translatedSub.translated, true);
           processedSubtitles++;
+          setCurrentLineIndex(validatedStart + processedSubtitles);
           setProgress(
             Math.round((processedSubtitles / subtitlesToTranslate.length) * 100)
           );
@@ -162,7 +165,12 @@ function TranslationOptions() {
       </button>
 
       {translationInProgress && (
-        <ProgressBar progress={progress} timeRemaining={timeRemaining} />
+        <ProgressBar
+          progress={progress}
+          timeRemaining={timeRemaining}
+          currentIndex={currentLineIndex}
+          totalLines={endIndex}
+        />
       )}
     </div>
   );

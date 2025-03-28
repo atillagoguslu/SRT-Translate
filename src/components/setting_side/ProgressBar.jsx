@@ -1,4 +1,4 @@
-function ProgressBar({ progress, timeRemaining }) {
+function ProgressBar({ progress, timeRemaining, currentIndex, totalLines }) {
   // Format seconds to MM:SS
   const formatTime = (seconds) => {
     if (seconds === null) return "--:--";
@@ -9,6 +9,9 @@ function ProgressBar({ progress, timeRemaining }) {
       .padStart(2, "0")}`;
   };
 
+  // Calculate remaining lines
+  const remainingLines = totalLines ? totalLines - currentIndex : 0;
+
   return (
     <>
       <div className="progress-bar-container">
@@ -18,6 +21,7 @@ function ProgressBar({ progress, timeRemaining }) {
       <div className="time-remaining">
         Time remaining: {formatTime(timeRemaining)}
       </div>
+      <div className="line-remaining">Lines remaining: {remainingLines}</div>
     </>
   );
 }

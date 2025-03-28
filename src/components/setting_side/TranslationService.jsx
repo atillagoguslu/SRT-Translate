@@ -1,4 +1,4 @@
-import lmStudioService from "../services/lmStudioService";
+import lmStudioService from "../../services/lmStudioService";
 
 // Utility functions for translation processing
 const TranslationService = {

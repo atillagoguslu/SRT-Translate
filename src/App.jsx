@@ -3,8 +3,8 @@ import { SubtitleProvider } from "./context/SubtitleContext";
 import { LmStudioProvider } from "./context/LmStudioContext";
 import FileUploader from "./components/FileUploader";
 import SubtitleDisplay from "./components/SubtitleDisplay";
-import TranslationOptions from "./components/TranslationOptions";
-import ExportOptions from "./components/ExportOptions";
+import TranslationOptions from "./components/setting_side/TranslationOptions";
+import ExportOptions from "./components/setting_side/ExportOptions";
 
 function App() {
   return (
@@ -17,7 +17,6 @@ function App() {
           </header>
 
           <main className="app-main">
-
             <section className="file-upload-section">
               <FileUploader />
             </section>

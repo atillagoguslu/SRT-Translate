@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { useSubtitle } from "../context/SubtitleContext";
+import { useSubtitle } from "../../context/SubtitleContext";
 import Parser from "srt-parser-2";
 
 function ExportOptions() {
-  const { subtitles, generateSRT } = useSubtitle();
+  const { subtitles } = useSubtitle();
   const [filename, setFilename] = useState("translated_subtitles.srt");
   const [encoding, setEncoding] = useState("UTF-8");
 
