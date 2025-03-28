@@ -38,7 +38,13 @@ const lmStudioService = {
   },
 
   // Translate text using LM Studio API
-  translateText: async (text, targetLanguage, modelId = null) => {
+  translateText: async (
+    text,
+    targetLanguage,
+    modelId = null,
+    temperature = 0.3,
+    maxTokens = 500
+  ) => {
     try {
       // Check if text starts and ends with music symbols (♪ or ♫) and they are not part of words
       const trimmedText = text.trim();
@@ -73,8 +79,8 @@ const lmStudioService = {
             },
           ],
           model: modelId || "local-model", // Use selected model or default to local-model
-          temperature: 0.3, // Lower temperature for more consistent translations
-          max_tokens: 500,
+          temperature: temperature, // Use the temperature parameter
+          max_tokens: maxTokens, // Use the maxTokens parameter
         }
       );
 

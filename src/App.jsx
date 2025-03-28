@@ -5,7 +5,6 @@ import FileUploader from "./components/FileUploader";
 import SubtitleDisplay from "./components/SubtitleDisplay";
 import TranslationOptions from "./components/TranslationOptions";
 import ExportOptions from "./components/ExportOptions";
-import Footer from "./components/Footer";
 import ErrorDisplay from "./components/ErrorDisplay";
 
 function App() {
@@ -36,8 +35,6 @@ function App() {
               </div>
             </section>
           </main>
-
-          <Footer />
         </div>
       </LmStudioProvider>
     </SubtitleProvider>

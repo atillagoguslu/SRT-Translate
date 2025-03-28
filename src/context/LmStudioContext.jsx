@@ -16,15 +16,15 @@ export function LmStudioProvider({ children }) {
     // Check LM Studio connection when component mounts
     checkLmStudioConnection();
 
-    // Set up periodic check every 30 seconds
-    const intervalId = setInterval(() => {
-      checkLmStudioConnection(true);
-    }, 30000);
+    // // Set up periodic check every 30 seconds
+    // const intervalId = setInterval(() => {
+    //   checkLmStudioConnection(true);
+    // }, 30000);
 
     // Clean up interval on unmount
-    return () => {
-      clearInterval(intervalId);
-    };
+    // return () => {
+    //   clearInterval(intervalId);
+    // };
   }, []);
 
   const checkLmStudioConnection = async (silent = false) => {

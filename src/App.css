@@ -38,7 +38,7 @@ body {
 .app-header {
   background-color: var(--primary-color);
   color: white;
-  padding: 1.5rem;
+  padding: 0.5rem;
   text-align: center;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
@@ -57,7 +57,7 @@ body {
 /* Main content */
 .app-main {
   flex: 1;
-  padding: 2rem;
+  padding: 1rem;
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
@@ -66,7 +66,7 @@ body {
 
 /* File uploader */
 .file-upload-section {
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
 }
 
 .file-uploader {
@@ -76,7 +76,7 @@ body {
 .drop-area {
   border: 2px dashed var(--border-color);
   border-radius: 8px;
-  padding: 3rem;
+  padding: 1rem;
   text-align: center;
   background-color: var(--card-bg);
   cursor: pointer;
@@ -119,16 +119,15 @@ body {
 .translation-options {
   background-color: var(--card-bg);
   border-radius: 8px;
-  padding: 1.5rem;
+  padding: 1rem;
   margin-bottom: 1.5rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .options-row {
   display: flex;
-  flex-wrap: wrap;
   gap: 1rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .language-selector {
@@ -213,11 +212,18 @@ body {
   text-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
 }
 
+.time-remaining {
+  margin-top: 6px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--light-text);
+}
+
 /* Export options */
 .export-options {
   background-color: var(--card-bg);
   border-radius: 8px;
-  padding: 1.5rem;
+  padding: 1rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
@@ -283,7 +289,7 @@ body {
 .subtitle-display {
   background-color: var(--card-bg);
   border-radius: 8px;
-  padding: 1.5rem;
+  padding: 1rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   min-height: 400px;
 }
@@ -297,25 +303,26 @@ body {
 }
 
 .search-container {
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .search-input {
   width: 100%;
-  padding: 0.75rem;
+  padding: 0.5rem;
   border-radius: 4px;
   border: 1px solid var(--border-color);
   font-size: 1rem;
 }
 
 .subtitles-container {
-  max-height: 600px;
+  /* min-height: 617px; */
+  max-height: 738px;
   overflow-y: auto;
 }
 
 .subtitle-item {
-  margin-bottom: 1.5rem;
-  padding-bottom: 1.5rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
   border-bottom: 1px solid var(--border-color);
 }
 
@@ -341,7 +348,7 @@ body {
 .original-text p,
 .translated-text p {
   margin: 0;
-  padding: 0.75rem;
+  padding: 0.25rem;
   background-color: #f5f5f5;
   border-radius: 4px;
   border-left: 3px solid var(--primary-color);
@@ -407,61 +414,6 @@ body {
   line-height: 1;
 }
 
-/* Footer */
-.app-footer {
-  background-color: #333;
-  color: white;
-  padding: 2rem;
-  margin-top: 2rem;
-}
-
-.footer-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  max-width: 1200px;
-  margin: 0 auto;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.app-info h3 {
-  margin: 0 0 0.5rem;
-}
-
-.app-info p {
-  margin: 0;
-  opacity: 0.8;
-}
-
-.footer-links {
-  display: flex;
-  gap: 1.5rem;
-}
-
-.footer-links a {
-  color: white;
-  text-decoration: none;
-  opacity: 0.8;
-  transition: opacity 0.3s;
-}
-
-.footer-links a:hover {
-  opacity: 1;
-}
-
-.copyright {
-  text-align: center;
-  margin-top: 2rem;
-  padding-top: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  max-width: 1200px;
-  margin-left: auto;
-  margin-right: auto;
-  font-size: 0.9rem;
-  opacity: 0.6;
-}
-
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .translator-section {
@@ -482,11 +434,6 @@ body {
 
   .drop-area {
     padding: 2rem 1rem;
-  }
-
-  .footer-content {
-    flex-direction: column;
-    align-items: flex-start;
   }
 }
 
@@ -591,4 +538,35 @@ body {
 .model-selector-container select:focus {
   border-color: var(--primary-color);
   outline: none;
+}
+
+/* Range selector styles */
+.range-selector {
+  flex: 1;
+  margin-right: 1rem;
+}
+
+.range-selector:last-child {
+  margin-right: 0;
+}
+
+.range-selector label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.range-selector input {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  font-size: 1rem;
+}
+.range-selector select {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  font-size: 1rem;
 }

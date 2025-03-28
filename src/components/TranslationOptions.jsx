@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSubtitle } from "../context/SubtitleContext";
 import { useLmStudio } from "../context/LmStudioContext";
 import lmStudioService from "../services/lmStudioService";
@@ -22,6 +22,38 @@ function TranslationOptions() {
 
   const [translationInProgress, setTranslationInProgress] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [startIndex, setStartIndex] = useState(0);
+  const [endIndex, setEndIndex] = useState(subtitles.length || 0);
+  const [temperature, setTemperature] = useState(0.3);
+  const [maxTokens, setMaxTokens] = useState(500);
+  const [startTime, setStartTime] = useState(null);
+  const [timeRemaining, setTimeRemaining] = useState(null);
+
+  // Update endIndex when subtitles change
+  useEffect(() => {
+    setEndIndex(subtitles.length);
+  }, [subtitles.length]);
+
+  // Update time remaining during translation
+  useEffect(() => {
+    let timer;
+    if (translationInProgress && startTime && progress > 0) {
+      timer = setInterval(() => {
+        const elapsedSeconds = (Date.now() - startTime) / 1000;
+        const estimatedTotalSeconds = (elapsedSeconds / progress) * 100;
+        const remainingSeconds = Math.max(
+          0,
+          estimatedTotalSeconds - elapsedSeconds
+        );
+
+        setTimeRemaining(remainingSeconds);
+      }, 1000);
+    }
+
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [translationInProgress, startTime, progress]);
 
   const languages = [
     { code: "tr", name: "Turkish" },
@@ -35,6 +67,26 @@ function TranslationOptions() {
 
   const handleModelChange = (e) => {
     selectModel(e.target.value);
+  };
+
+  const handleStartIndexChange = (e) => {
+    const value = parseInt(e.target.value) || 0;
+    setStartIndex(Math.max(0, value));
+  };
+
+  const handleEndIndexChange = (e) => {
+    const value = parseInt(e.target.value) || 0;
+    setEndIndex(Math.min(value, subtitles.length));
+  };
+
+  const handleTemperatureChange = (e) => {
+    const value = parseFloat(e.target.value);
+    setTemperature(value);
+  };
+
+  const handleMaxTokensChange = (e) => {
+    const value = parseInt(e.target.value);
+    setMaxTokens(value);
   };
 
   // Detects if a string ends with a sentence-ending character
@@ -72,7 +124,9 @@ function TranslationOptions() {
       const fullTranslatedText = await lmStudioService.translateText(
         sentenceGroup.fullText,
         getLanguageName(targetLanguage),
-        selectedModel
+        selectedModel,
+        temperature,
+        maxTokens
       );
 
       // Remove any "•" characters that might have remained in the translation
@@ -144,14 +198,36 @@ function TranslationOptions() {
       return;
     }
 
+    const validatedStart = Math.max(
+      0,
+      Math.min(startIndex, subtitles.length - 1)
+    );
+    const validatedEnd = Math.max(
+      validatedStart,
+      Math.min(endIndex, subtitles.length)
+    );
+
+    if (validatedStart >= validatedEnd) {
+      setError("Start index must be less than end index");
+      return;
+    }
+
     setTranslationInProgress(true);
     setIsLoading(true);
     setError(null);
     setProgress(0);
+    setStartTime(Date.now());
+    setTimeRemaining(null);
 
     try {
+      // Get subtitles in the specified range
+      const subtitlesToTranslate = subtitles.slice(
+        validatedStart,
+        validatedEnd
+      );
+
       // Group subtitles into sentences
-      const sentenceGroups = groupSubtitlesIntoSentences(subtitles);
+      const sentenceGroups = groupSubtitlesIntoSentences(subtitlesToTranslate);
       const totalGroups = sentenceGroups.length;
       let processedSubtitles = 0;
 
@@ -164,7 +240,7 @@ function TranslationOptions() {
           updateSubtitle(translatedSub.id, translatedSub.translated, true);
           processedSubtitles++;
           setProgress(
-            Math.round((processedSubtitles / subtitles.length) * 100)
+            Math.round((processedSubtitles / subtitlesToTranslate.length) * 100)
           );
         }
       }
@@ -175,6 +251,16 @@ function TranslationOptions() {
       setTranslationInProgress(false);
       setProgress(100);
     }
+  };
+
+  // Format seconds to MM:SS
+  const formatTime = (seconds) => {
+    if (seconds === null) return "--:--";
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins.toString().padStart(2, "0")}:${secs
+      .toString()
+      .padStart(2, "0")}`;
   };
 
   return (
@@ -255,6 +341,74 @@ function TranslationOptions() {
         </div>
       </div>
 
+      <div className="options-row">
+        <div className="range-selector">
+          <label htmlFor="start-index">Start Index:</label>
+          <input
+            type="number"
+            id="start-index"
+            value={startIndex}
+            onChange={handleStartIndexChange}
+            disabled={translationInProgress}
+            min="0"
+            max={subtitles.length - 1}
+          />
+        </div>
+        <div className="range-selector">
+          <label htmlFor="end-index">End Index:</label>
+          <input
+            type="number"
+            id="end-index"
+            value={endIndex}
+            onChange={handleEndIndexChange}
+            disabled={translationInProgress}
+            min={startIndex + 1}
+            max={subtitles.length}
+          />
+        </div>
+      </div>
+
+      <div className="options-row">
+        <div className="range-selector">
+          <label htmlFor="temperature">Temperature:</label>
+          <input
+            type="range"
+            id="temperature"
+            min="0"
+            max="1"
+            step="0.1"
+            value={temperature}
+            onChange={handleTemperatureChange}
+            disabled={translationInProgress}
+          />
+          <span>{temperature}</span>
+        </div>
+        <div className="range-selector">
+          <label htmlFor="max-tokens">Max Tokens:</label>
+          <select
+            id="max-tokens"
+            value={maxTokens}
+            onChange={handleMaxTokensChange}
+            disabled={translationInProgress}
+          >
+            <option value="100" defaultValue>
+              100
+            </option>
+            <option value="500">500</option>
+            <option value="1000">1000</option>
+            <option value="1500">1500</option>
+            <option value="2000">2000</option>
+            <option value="2500">2500</option>
+            <option value="3000">3000</option>
+            <option value="3500">3500</option>
+            <option value="4000">4000</option>
+            <option value="4500">4500</option>
+            <option value="5000">5000</option>
+            <option value="50000">Limitless</option>
+          </select>
+        </div>
+      </div>
+
       <button
         className="translate-button"
         onClick={startTranslation}
@@ -269,10 +423,18 @@ function TranslationOptions() {
       </button>
 
       {translationInProgress && (
-        <div className="progress-bar-container">
-          <div className="progress-bar" style={{ width: `${progress}%` }}></div>
-          <span className="progress-text">{progress}%</span>
-        </div>
+        <>
+          <div className="progress-bar-container">
+            <div
+              className="progress-bar"
+              style={{ width: `${progress}%` }}
+            ></div>
+            <span className="progress-text">{progress}%</span>
+          </div>
+          <div className="time-remaining">
+            Time remaining: {formatTime(timeRemaining)}
+          </div>
+        </>
       )}
     </div>
   );
