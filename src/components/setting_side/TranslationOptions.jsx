@@ -27,6 +27,7 @@ function TranslationOptions() {
   const [startTime, setStartTime] = useState(null);
   const [timeRemaining, setTimeRemaining] = useState(null);
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
+  const [shouldStopTranslation, setShouldStopTranslation] = useState(false);
 
   // Update endIndex when subtitles change
   useEffect(() => {
@@ -36,9 +37,10 @@ function TranslationOptions() {
   // Update time remaining during translation
   useEffect(() => {
     let timer;
+    const interval = 500;
     if (translationInProgress && startTime && progress > 0) {
       timer = setInterval(() => {
-        const elapsedSeconds = (Date.now() - startTime) / 1000;
+        const elapsedSeconds = (Date.now() - startTime) / interval;
         const estimatedTotalSeconds = (elapsedSeconds / progress) * 100;
         const remainingSeconds = Math.max(
           0,
@@ -46,13 +48,17 @@ function TranslationOptions() {
         );
 
         setTimeRemaining(remainingSeconds);
-      }, 1000);
+      }, interval);
     }
 
     return () => {
       if (timer) clearInterval(timer);
     };
   }, [translationInProgress, startTime, progress]);
+
+  const stopTranslation = () => {
+    setShouldStopTranslation(true);
+  };
 
   const startTranslation = async () => {
     if (!targetLanguage || !subtitles.length) {
@@ -88,6 +94,7 @@ function TranslationOptions() {
     setStartTime(Date.now());
     setTimeRemaining(null);
     setCurrentLineIndex(validatedStart);
+    setShouldStopTranslation(false);
 
     try {
       // Get subtitles in the specified range
@@ -103,6 +110,10 @@ function TranslationOptions() {
       let processedSubtitles = 0;
 
       for (let i = 0; i < totalGroups; i++) {
+        if (shouldStopTranslation) {
+          break;
+        }
+
         const sentenceGroup = sentenceGroups[i];
         const translatedSubtitles = await TranslationService.translateSentence(
           sentenceGroup,
@@ -114,6 +125,10 @@ function TranslationOptions() {
 
         // Update each subtitle in the group with its translation
         for (const translatedSub of translatedSubtitles) {
+          if (shouldStopTranslation) {
+            break;
+          }
+
           updateSubtitle(translatedSub.id, translatedSub.translated, true);
           processedSubtitles++;
           setCurrentLineIndex(validatedStart + processedSubtitles);
@@ -127,6 +142,7 @@ function TranslationOptions() {
     } finally {
       setIsLoading(false);
       setTranslationInProgress(false);
+      setShouldStopTranslation(false);
       setProgress(100);
     }
   };
@@ -165,12 +181,17 @@ function TranslationOptions() {
       </button>
 
       {translationInProgress && (
-        <ProgressBar
-          progress={progress}
-          timeRemaining={timeRemaining}
-          currentIndex={currentLineIndex}
-          totalLines={endIndex}
-        />
+        <>
+          <button className="stop-button" onClick={stopTranslation}>
+            Stop Translation
+          </button>
+          <ProgressBar
+            progress={progress}
+            timeRemaining={timeRemaining}
+            currentIndex={currentLineIndex}
+            totalLines={endIndex}
+          />
+        </>
       )}
     </div>
   );

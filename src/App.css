@@ -184,6 +184,21 @@ body {
   cursor: not-allowed;
 }
 
+.stop-button {
+  background-color: #ff4d4d;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  margin-top: 10px;
+  cursor: pointer;
+  border-radius: 5px;
+  font-size: 16px;
+}
+
+.stop-button:hover {
+  background-color: #ff1a1a;
+}
+
 .progress-bar-container {
   margin-top: 1rem;
   height: 20px;
