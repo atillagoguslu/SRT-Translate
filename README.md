@@ -1,4 +1,4 @@
-# SRTTranslate
+# SRT-Translate
 
 A tool for automatically translating subtitle files (.srt) between languages.
 
@@ -13,7 +13,7 @@ A tool for automatically translating subtitle files (.srt) between languages.
 1. Clone the repository
 
 ```bash
-git clone https://github.com/atillagoguslu/srtt.git
+git clone https://github.com/atillagoguslu/srt-translate.git
 ```
 
 2. Install dependencies
@@ -28,10 +28,6 @@ npm install
 npm run dev
 ```
 
-## How to Use
-
-[Instructions coming soon]
-
 ## Contributing
 
 Contributions are welcome and appreciated! Here's how you can help:
@@ -39,7 +35,6 @@ Contributions are welcome and appreciated! Here's how you can help:
 - **Code contributions**: Submit a pull request with your improvements
 - **Bug reports**: Open an issue if you find a bug
 - **Feature requests**: Suggest new features through issues
-- **Documentation**: Help improve or translate documentation
 
 ### Steps to Contribute
 

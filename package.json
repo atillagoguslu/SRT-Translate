@@ -1,11 +1,11 @@
 {
-  "name": "srtt",
+  "name": "srt-translate",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.4.5",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build --base=/srtt",
+    "build": "vite build --base=/srt-translate",
     "lint": "eslint .",
     "preview": "vite preview"
   },
