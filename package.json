@@ -1,12 +1,12 @@
 {
   "name": "srt-translate",
-  "homepage": "https://atillagoguslu.github.io/srt-translate",
+  "homepage": "https://atillagoguslu.github.io/SRT-Translate",
   "private": true,
   "version": "0.4.5",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build --base=/srt-translate",
+    "build": "vite build --base=/SRT-Translate",
     "lint": "eslint .",
     "preview": "vite preview"
   },
