@@ -1,5 +1,6 @@
 {
   "name": "srt-translate",
+  "homepage": "https://atillagoguslu.github.io/srt-translate",
   "private": true,
   "version": "0.4.5",
   "type": "module",
